@@ -1,0 +1,16 @@
+*&---------------------------------------------------------------------*
+*& Report ZABAPR_REV_ALV_08
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZABAPR_REV_ALV_08.
+
+INCLUDE ZABAPR_REV_ALV_08_TOP.    "Declaração dos tipos e variáveis
+INCLUDE ZABAPR_REV_ALV_08_SEL.    "Declaração dos parametros de select
+INCLUDE ZABAPR_REV_ALV_08_F01.    "Declaração das subrotinas
+
+START-OF-SELECTION.
+
+PERFORM f_faz_select.             "Subrotina da query no DB
+
+PERFORM f_alv.                    "Subrotina da exibição do ALV

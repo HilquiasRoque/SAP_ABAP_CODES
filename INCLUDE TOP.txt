@@ -1,0 +1,31 @@
+*&---------------------------------------------------------------------*
+*& Include          ZABAPR_REV_ALV_08_TOP
+*&---------------------------------------------------------------------*
+
+TABLES: zcliente_08, zlocadora_08, zfilme_08.     "Declaração das tabelas DB.
+
+types: BEGIN OF ty_saida,                         "Tipo que será usado na tabela de
+  COD_CLIENTE TYPE zlocadora_08-cod_cliente,      "exibição do ALV
+  NOME        TYPE zcliente_08-nome,
+  VIP         type zcliente_08-vip,
+  FILME       type zfilme_08-nome,
+  DATA        TYPE zlocadora_08-data,
+  HORA        TYPE zlocadora_08-hora,
+  PAGO        TYPE zlocadora_08-pago,
+  END OF ty_saida.
+
+TYPES: BEGIN OF ty_filme,
+  cod_filme TYPE zfilme_08-cod_filme,
+  nome      TYPE zfilme_08-nome,
+  END OF ty_filme.
+
+TYPES: BEGIN OF ty_cliente,
+  cod_cliente TYPE zcliente_08-cod_cliente,
+  nome        TYPE zcliente_08-nome,
+  vip         TYPE zcliente_08-vip,
+  END OF ty_cliente.
+
+DATA: t_saida TYPE table of ty_saida.
+
+DATA: T_FIELDCAT TYPE SLIS_T_FIELDCAT_ALV,
+      T_EVENTS   TYPE SLIS_T_EVENT.
