@@ -1,0 +1,267 @@
+*&---------------------------------------------------------------------*
+*& Include          ZSEXTOU_08_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form f_select
+*&---------------------------------------------------------------------*
+FORM f_select .
+
+  DATA: lwa_alv TYPE ty_alv.
+
+  DATA: idd07v TYPE TABLE OF  dd07v WITH HEADER LINE.
+
+  SELECT cod_aero
+    FROM zaeroporto
+    INTO TABLE @DATA(lt_aero).
+
+  IF sy-subrc = 0.
+    LOOP AT lt_aero INTO DATA(lwa_aero).
+      MOVE lwa_aero-cod_aero TO lwa_alv-cod_aero.
+
+      CALL FUNCTION 'DD_DOMVALUES_GET'
+        EXPORTING
+          domname        = 'ZCOD_AERO'
+          text           = 'X'
+          langu          = sy-langu
+        TABLES
+          dd07v_tab      = idd07v
+        EXCEPTIONS
+          wrong_textflag = 1
+          OTHERS         = 2.
+
+      LOOP AT idd07v INTO DATA(lwa_dom).
+        IF lwa_dom-domvalue_l = lwa_aero-cod_aero.
+          move lwa_dom-ddtext to lwa_alv-nome.
+        ENDIF.
+      ENDLOOP.
+
+      APPEND lwa_alv TO t_alv.
+    ENDLOOP.
+  ENDIF.
+
+  SORT t_alv BY cod_aero.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form f_alv_9000
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+FORM f_alv_9000 .
+
+  PERFORM f_preenche_evento.
+
+  CALL FUNCTION 'REUSE_ALV_FIELDCATALOG_MERGE'
+    EXPORTING
+      i_structure_name       = 'ty_alv'
+    CHANGING
+      ct_fieldcat            = lt_fieldcat
+    EXCEPTIONS
+      inconsistent_interface = 1
+      program_error          = 2
+      OTHERS                 = 3.
+
+
+  CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+    EXPORTING
+      i_callback_program       = sy-cprog
+      i_callback_pf_status_set = 'F_PF_STATUS_SET'
+      i_callback_user_command  = 'F_USER_COMMAND'
+      it_fieldcat              = lt_fieldcat
+      it_events                = t_events
+    TABLES
+      t_outtab                 = t_alv
+    EXCEPTIONS
+      program_error            = 1
+      OTHERS                   = 2.
+
+  IF sy-subrc <> 0.
+
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form f_pf_status_set
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+FORM f_pf_status_set USING list.
+
+  SET PF-STATUS 'STATUS_ALV_9000'.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form f_user_command
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+FORM f_user_command USING ucomm
+                          variable TYPE slis_selfield.
+
+  CASE sy-ucomm.
+    WHEN 'BACK'.
+    WHEN 'SORI'.
+      v_cod_origem = variable-value.
+      variable-refresh = abap_true.
+      PERFORM f_alv_9100.
+    WHEN OTHERS.
+  ENDCASE.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form f_alv_9100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+FORM f_alv_9100 .
+
+  DATA(lt_temp_alv) = t_alv[].
+  DELETE lt_temp_alv WHERE cod_aero = v_cod_origem.
+
+  CALL FUNCTION 'REUSE_ALV_FIELDCATALOG_MERGE'
+    EXPORTING
+      i_structure_name       = 'ty_alv'
+    CHANGING
+      ct_fieldcat            = lt_fieldcat
+    EXCEPTIONS
+      inconsistent_interface = 1
+      program_error          = 2
+      OTHERS                 = 3.
+
+  CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+    EXPORTING
+      i_callback_program       = sy-cprog
+      i_callback_pf_status_set = 'F_PF_STATUS_SET2'
+      i_callback_user_command  = 'F_USER_COMMAND2'
+      it_fieldcat              = lt_fieldcat
+      it_events                = t_events
+    TABLES
+      t_outtab                 = lt_temp_alv
+    EXCEPTIONS
+      program_error            = 1
+      OTHERS                   = 2.
+
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form F_PF_status_set2
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+FORM F_PF_status_set2 USING list .
+
+  SET PF-STATUS 'STATUS_ALV_9100'.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form f_user_command2
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+FORM f_user_command2 USING ucomm
+                           variable TYPE slis_selfield.
+
+  CASE sy-ucomm.
+    WHEN 'BACK'.
+    WHEN 'SDES'.
+      v_cod_destino = variable-value.
+      variable-refresh = abap_true.
+      PERFORM f_calcula_distancia.
+      PERFORM f_calcula_passagem.
+    WHEN OTHERS.
+  ENDCASE.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form f_preenche_evento
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+FORM f_preenche_evento .
+  CALL FUNCTION 'REUSE_ALV_EVENTS_GET'
+    EXPORTING
+      i_list_type = 0
+    IMPORTING
+      et_events   = t_events.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form f_calcula_distancia
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+FORM f_calcula_distancia .
+
+*   Declarando variáveis para os cálculos.
+  DATA: lv_lat1 TYPE geolat,
+        lv_lon1 TYPE geolon,
+        lv_lat2 TYPE geolat,
+        lv_lon2 TYPE geolon,
+        lv_dist TYPE f.
+
+*   Selecionando os dados necessários para tabela interna local.
+  SELECT cod_aero, coordx, coordy
+    FROM zaeroporto
+    INTO TABLE @DATA(lt_aero).
+
+*   Atribuindo valores às variáveis de coordenadas x e y.
+  IF sy-subrc = 0.
+    LOOP AT lt_aero INTO DATA(lwa_aero).
+      IF lwa_aero-cod_aero = v_cod_origem.
+        lv_lat1 = lwa_aero-coordx.
+        lv_lon1 = lwa_aero-coordy.
+      ELSEIF lwa_aero-cod_aero = v_cod_destino.
+        lv_lat2 = lwa_aero-coordx.
+        lv_lon2 = lwa_aero-coordy.
+      ENDIF.
+    ENDLOOP.
+  ENDIF.
+
+*   Calculando a distância e armazenando em variável global.
+
+  CALL METHOD cl_geocalc=>distance_by_lonlat
+    EXPORTING
+      longitude1 = lv_lon1
+      latitude1  = lv_lat1
+      longitude2 = lv_lon2
+      latitude2  = lv_lat2
+    IMPORTING
+      distance   = lv_dist.
+
+  v_dist_km = lv_dist.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form f_calcula_passagem
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+FORM f_calcula_passagem .
+
+DATA: lv_cod TYPE c LENGTH 3,
+      lv_taxemb TYPE p DECIMALS 2,
+      lv_taxbag TYPE p DECIMALS 2.
+
+SELECT cod_aero, taxa_embarque, taxa_bagaguem
+  FROM zaeroporto
+  INTO TABLE @DATA(lt_taxas).
+
+  if sy-subrc = 0.
+    LOOP AT lt_taxas INTO DATA(lwa_tax).
+      IF lwa_tax-cod_aero = v_cod_origem.
+        lv_taxemb = lwa_tax-taxa_embarque.
+        lv_taxbag = lwa_tax-taxa_bagaguem.
+      ENDIF.
+    ENDLOOP.
+  ENDIF.
+
+*  Calculo do valor da passagem: QTD_PESSOAS * ( Distância + Taxa_Embarque ) + QTD_MALAS * Valor_Mala
+
+v_preco = p_qtdp * ( v_dist_km + lv_taxemb ) + ( p_qtdm * lv_taxbag ).
+
+MESSAGE i005(zmessage08) WITH v_preco v_cod_origem v_cod_destino.
+
+ENDFORM.

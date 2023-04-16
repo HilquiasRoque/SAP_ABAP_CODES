@@ -1,0 +1,18 @@
+*&---------------------------------------------------------------------*
+*& Report ZSEXTOU_08
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT zsextou_08.
+
+INCLUDE zsextou_08_TOP.
+INCLUDE zsextou_08_PAR.
+INCLUDE zsextou_08_F01.
+
+START-OF-SELECTION.
+
+  PERFORM f_select.
+
+  PERFORM f_alv_9000.
+
+END-OF-SELECTION.

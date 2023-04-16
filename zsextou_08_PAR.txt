@@ -1,0 +1,9 @@
+*&---------------------------------------------------------------------*
+*& Include          ZSEXTOU_08_PAR
+*&---------------------------------------------------------------------*
+
+PARAMETERS: p_qtdp TYPE i,
+            p_qtdm TYPE i.
+"Os elementos de texto estão configurados
+"para p_qtdp = Quantidade de Pessoas
+"     p_qtdm = Quantidade de Malas

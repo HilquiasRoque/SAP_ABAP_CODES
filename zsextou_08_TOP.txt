@@ -1,0 +1,25 @@
+*&---------------------------------------------------------------------*
+*& Include          ZSEXTOU_08_TOP
+*&---------------------------------------------------------------------*
+
+TABLES: zaeroporto.
+
+TYPES: BEGIN OF ty_alv,
+         cod_aero TYPE c LENGTH 3,
+         nome     TYPE c LENGTH 60,
+       END OF ty_alv.
+
+DATA: t_alv TYPE TABLE OF ty_alv.
+
+DATA: it_zaeroporto TYPE TABLE OF zaeroporto.
+
+DATA: lT_FIELDCAT TYPE  slis_t_fieldcat_alv.
+
+DATA: t_events TYPE slis_t_event.
+
+DATA: v_cod_origem  TYPE c LENGTH 3,
+      v_cod_destino TYPE c LENGTH 3.
+
+DATA: v_dist_km TYPE p DECIMALS 2.
+
+DATA: v_preco TYPE p DECIMALS 2.
