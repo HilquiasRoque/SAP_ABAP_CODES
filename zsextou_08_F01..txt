@@ -195,11 +195,12 @@ ENDFORM.
 FORM f_calcula_distancia .
 
 *   Declarando variáveis para os cálculos.
-  DATA: lv_lat1 TYPE geolat,
-        lv_lon1 TYPE geolon,
-        lv_lat2 TYPE geolat,
-        lv_lon2 TYPE geolon,
-        lv_dist TYPE f.
+  DATA: lv_lat1 TYPE p DECIMALS 6,
+        lv_lon1 TYPE p DECIMALS 6,
+        lv_lat2 TYPE p DECIMALS 6,
+        lv_lon2 TYPE p DECIMALS 6,
+        lv_dlat TYPE p DECIMALS 6,
+        lv_dlon TYPE p DECIMALS 6.
 
 *   Selecionando os dados necessários para tabela interna local.
   SELECT cod_aero, coordx, coordy
@@ -221,16 +222,9 @@ FORM f_calcula_distancia .
 
 *   Calculando a distância e armazenando em variável global.
 
-  CALL METHOD cl_geocalc=>distance_by_lonlat
-    EXPORTING
-      longitude1 = lv_lon1
-      latitude1  = lv_lat1
-      longitude2 = lv_lon2
-      latitude2  = lv_lat2
-    IMPORTING
-      distance   = lv_dist.
-
-  v_dist_km = lv_dist.
+lv_dlat = lv_lat2 - lv_lat1.
+lv_dlon = lv_lon2 - lv_lon1.
+v_dist_km = sqrt( lv_dlat ** 2 + lv_dlon ** 2 ) * '53.46'.
 
 
 ENDFORM.
